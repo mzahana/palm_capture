@@ -1,0 +1,40 @@
+.client-edit-modal {
+    max-width: 900px;
+}
+
+.audio-edit-section {
+    background-color: var(--background-light);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-top: 0.5rem;
+}
+
+.current-audio {
+    margin-bottom: 1rem;
+}
+
+.current-audio p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.current-audio audio {
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+.btn-text-danger {
+    background: none;
+    border: none;
+    color: #e53e3e;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0;
+    text-decoration: underline;
+}
+
+.btn-text-danger:hover {
+    color: #c53030;
+}

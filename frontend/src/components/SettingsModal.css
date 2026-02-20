@@ -1,0 +1,9 @@
+.settings-modal {
+    max-width: 400px;
+    padding: 2rem;
+}
+
+.settings-modal h3 {
+    margin-top: 0;
+    color: #2D3748;
+}

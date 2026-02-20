@@ -1,0 +1,261 @@
+.client-container {
+    min-height: 100vh;
+    background-color: var(--bg-color);
+    padding-bottom: 2rem;
+}
+
+.client-header {
+    background: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.client-header h1 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--primary-color);
+}
+
+.btn-logout {
+    background: transparent;
+    border: 1px solid #CBD5E0;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #4A5568;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-logout:hover {
+    background: #EDF2F7;
+}
+
+.form-wrapper {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.entry-form {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.form-section {
+    margin-bottom: 2rem;
+}
+
+.form-section>label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #2D3748;
+}
+
+.hidden-input {
+    display: none;
+}
+
+.capture-placeholder {
+    border: 2px dashed #CBD5E0;
+    border-radius: 8px;
+    padding: 3rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    background: #F7FAFC;
+    transition: all 0.2s;
+}
+
+.capture-placeholder:hover {
+    border-color: var(--primary-color);
+    background: #F0FFF4;
+}
+
+.camera-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.preview-container {
+    text-align: center;
+}
+
+.image-preview {
+    max-width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}
+
+.btn-secondary {
+    background: #E2E8F0;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #2D3748;
+}
+
+.btn-record {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #E2E8F0;
+    background: white;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #4A5568;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-record:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.recording-active {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: #FFF5F5;
+    border: 1px solid #FEB2B2;
+    border-radius: 8px;
+    color: #C53030;
+    font-weight: 600;
+}
+
+.pulse {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.btn-stop {
+    background: #E53E3E;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.audio-preview {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.audio-preview audio {
+    width: 100%;
+}
+
+.btn-text-danger {
+    background: none;
+    border: none;
+    color: #E53E3E;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.notes-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 1rem;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 1rem;
+    resize: vertical;
+}
+
+.location-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #F7FAFC;
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.loc-data {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #2D3748;
+    line-height: 1.5;
+}
+
+.loc-missing {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #A0AEC0;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 1rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.125rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    box-shadow: 0 4px 6px rgba(47, 133, 90, 0.2);
+}
+
+.btn-submit:hover {
+    background-color: #276749;
+}
+
+.btn-submit:disabled {
+    background-color: #9AE6B4;
+    cursor: not-allowed;
+}
+
+.status-banner {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-weight: 500;
+}
+
+.status-banner.success {
+    background: #C6F6D5;
+    color: #22543D;
+}
+
+.status-banner.error {
+    background: #FED7D7;
+    color: #822727;
+}

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../utils/api';
 import './SettingsModal.css';
 
 export default function SettingsModal({ isOpen, onClose }) {
+    const { t, i18n } = useTranslation();
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [message, setMessage] = useState('');
@@ -33,11 +35,11 @@ export default function SettingsModal({ isOpen, onClose }) {
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content settings-modal" onClick={e => e.stopPropagation()}>
                 <button className="modal-close" onClick={onClose}>&times;</button>
-                <h3>Settings</h3>
+                <h3>{t('settings.title')}</h3>
 
                 <form onSubmit={handleChangePassword}>
                     <div className="form-group">
-                        <label>Old Password</label>
+                        <label>{t('settings.old_password')}</label>
                         <input
                             type="password"
                             value={oldPassword}
@@ -46,7 +48,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                         />
                     </div>
                     <div className="form-group">
-                        <label>New Password</label>
+                        <label>{t('settings.new_password')}</label>
                         <input
                             type="password"
                             value={newPassword}
@@ -59,7 +61,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                             {message}
                         </div>
                     )}
-                    <button type="submit" className="btn-primary">Update Password</button>
+                    <button type="submit" className="btn-primary">{t('settings.update_password')}</button>
                 </form>
             </div>
         </div>

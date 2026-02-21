@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api, { BASE_URL } from '../utils/api';
 import SettingsModal from './SettingsModal';
+import LanguageSwitcher from './LanguageSwitcher';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -42,6 +44,7 @@ L.Icon.Default.mergeOptions({
 });
 
 export default function ClientView() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const username = localStorage.getItem('username') || 'User';
     const role = localStorage.getItem('role');
@@ -208,13 +211,13 @@ export default function ClientView() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!imageFile) {
-            setStatusMessage("Please capture or upload an image first.");
+            setStatusMessage(t('form.choose_image_first'));
             setStatusType("error");
             return;
         }
 
         setIsSubmitting(true);
-        setStatusMessage("Uploading data...");
+        setStatusMessage(t('form.uploading'));
         setStatusType("");
 
         const formData = new FormData();
@@ -272,14 +275,15 @@ export default function ClientView() {
     return (
         <div className="client-container">
             <header className="client-header">
-                <h1>{role === 'admin' ? 'Data Collection Mode' : 'New Tree Entry'}</h1>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <span className="welcome-text">Welcome, <strong>{username}</strong></span>
-                    <button className="btn-secondary" onClick={() => setIsSettingsOpen(true)}>⚙️ Settings</button>
+                <h1>{role === 'admin' ? t('header.data_collection_mode') : t('header.new_tree_entry')}</h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                    <span className="welcome-text">{t('header.welcome', { username })}</span>
+                    <LanguageSwitcher />
+                    <button className="btn-secondary" onClick={() => setIsSettingsOpen(true)}>⚙️ {t('header.settings')}</button>
                     {role === 'admin' && (
                         <button className="btn-secondary" onClick={() => navigate('/admin')}>Admin Dashboard</button>
                     )}
-                    <button className="btn-logout" onClick={handleLogout}>Logout</button>
+                    <button className="btn-logout" onClick={handleLogout}>{t('header.logout')}</button>
                 </div>
             </header>
 
@@ -288,17 +292,17 @@ export default function ClientView() {
 
                     {/* Image Section */}
                     <section className="form-section">
-                        <label>1. Capture Image</label>
+                        <label>{t('form.photo')}</label>
                         <div className="image-capture-area">
                             {imagePreview ? (
                                 <div className="preview-container">
                                     <img src={imagePreview} alt="Preview" className="image-preview" />
-                                    <button type="button" className="btn-secondary mt-2" onClick={() => { setImageFile(null); setImagePreview(null); }}>Retake</button>
+                                    <button type="button" className="btn-secondary mt-2" onClick={() => { setImageFile(null); setImagePreview(null); }}>{t('form.retake_photo')}</button>
                                 </div>
                             ) : (
                                 <div className="capture-placeholder" onClick={openCamera}>
                                     <div className="camera-icon">📷</div>
-                                    <span>Tap to open camera</span>
+                                    <span>{t('form.take_photo')}</span>
                                 </div>
                             )}
                             <input
@@ -314,23 +318,23 @@ export default function ClientView() {
 
                     {/* Voice Note Section */}
                     <section className="form-section">
-                        <label>2. Voice Note (Optional)</label>
+                        <label>{t('form.voice_note')}</label>
                         <div className={`audio-recorder ${isRecording ? 'recording' : ''}`}>
                             {!isRecording && !audioBlob && (
                                 <button type="button" className="btn-record" onClick={startRecording}>
-                                    🎙️ Start Recording
+                                    🎙️ {t('form.start_recording')}
                                 </button>
                             )}
                             {isRecording && (
                                 <div className="recording-active">
-                                    <span className="pulse">🔴</span> Recording... {recordingTime}s
-                                    <button type="button" className="btn-stop" onClick={stopRecording}>Stop</button>
+                                    <span className="pulse">🔴</span> {t('admin.recording_active')}... {recordingTime}s
+                                    <button type="button" className="btn-stop" onClick={stopRecording}>{t('form.stop_recording')}</button>
                                 </div>
                             )}
                             {audioBlob && !isRecording && (
                                 <div className="audio-preview">
                                     <audio controls src={URL.createObjectURL(audioBlob)}></audio>
-                                    <button type="button" className="btn-text-danger" onClick={() => { setAudioBlob(null); setRecordingTime(0); }}>Delete</button>
+                                    <button type="button" className="btn-text-danger" onClick={() => { setAudioBlob(null); setRecordingTime(0); }}>{t('common.delete')}</button>
                                 </div>
                             )}
                         </div>
@@ -338,10 +342,10 @@ export default function ClientView() {
 
                     {/* Notes Section */}
                     <section className="form-section">
-                        <label>3. Text Notes (Optional)</label>
+                        <label>{t('form.text_notes')}</label>
                         <textarea
                             rows="3"
-                            placeholder="Any additional observations..."
+                            placeholder={t('form.notes_placeholder')}
                             value={notes}
                             onChange={e => setNotes(e.target.value)}
                             className="notes-input"
@@ -352,9 +356,9 @@ export default function ClientView() {
                     <section className="form-section location-section">
                         <div className="location-info">
                             <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                <span>4. Location & Weather</span>
+                                <span>{t('form.location_weather')}</span>
                                 <button type="button" className="action-btn" onClick={() => setLocationMode(locationMode === 'auto' ? 'map' : 'auto')} style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem' }}>
-                                    {locationMode === 'auto' ? 'Pick on Map 🗺️' : 'Use Auto GPS 📡'}
+                                    {locationMode === 'auto' ? t('form.pick_map') : t('form.use_auto_gps')}
                                 </button>
                             </label>
 
@@ -380,7 +384,7 @@ export default function ClientView() {
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', padding: '0.5rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                                         <p style={{ fontSize: '0.8rem', color: '#666', margin: 0 }}>
-                                            {mapLocation ? `Selected: ${mapLocation.lat.toFixed(4)}, ${mapLocation.lng.toFixed(4)}` : 'Tap anywhere on the map to drop a pin'}
+                                            {mapLocation ? t('form.selected_map', { lat: mapLocation.lat.toFixed(4), lng: mapLocation.lng.toFixed(4) }) : t('form.tap_on_map')}
                                         </p>
                                         <button
                                             type="button"
@@ -403,7 +407,7 @@ export default function ClientView() {
                                                 cursor: mapLocation ? 'pointer' : 'not-allowed'
                                             }}
                                         >
-                                            Confirm Pin ✓
+                                            {t('form.confirm_pin')}
                                         </button>
                                     </div>
                                 </div>
@@ -411,12 +415,12 @@ export default function ClientView() {
                                 <>
                                     {location ? (
                                         <p className="loc-data" style={{ padding: '0.5rem', backgroundColor: '#f7fafc', borderRadius: '4px' }}>
-                                            📍 Local GPS: {location.lat.toFixed(4)}, {location.lon.toFixed(4)}
-                                            <br /> 🌡️ {temperature ? `${temperature}°C` : 'Fetching temp...'}
+                                            📍 {t('form.local_gps', { lat: location.lat.toFixed(4), lon: location.lon.toFixed(4) })}
+                                            <br /> 🌡️ {temperature ? `${temperature}°C` : t('form.fetching_temp')}
                                         </p>
                                     ) : (
                                         <p className="loc-missing" style={{ padding: '0.5rem', backgroundColor: '#fff5f5', color: '#c53030', borderRadius: '4px' }}>
-                                            Auto GPS has not been captured. Use the "Pick on Map" button if your phone is blocking it.
+                                            {t('form.missing_auto_gps')}
                                         </p>
                                     )}
                                 </>
@@ -424,7 +428,7 @@ export default function ClientView() {
                         </div>
                         {locationMode === 'auto' && (
                             <button type="button" className="btn-secondary" onClick={getLocation} style={{ marginTop: '0.5rem' }}>
-                                {location ? 'Refresh Auto Location' : 'Fetch GPS Location Automatically'}
+                                {location ? t('form.refresh_auto') : t('form.fetch_gps_auto')}
                             </button>
                         )}
                     </section>
@@ -436,18 +440,18 @@ export default function ClientView() {
                     )}
 
                     <button type="submit" className="btn-submit" disabled={isSubmitting}>
-                        {isSubmitting ? 'Submitting...' : 'Upload Entry'}
+                        {isSubmitting ? t('form.uploading') : t('form.upload_entry')}
                     </button>
                 </form>
 
                 {/* History Section */}
                 {role !== 'admin' && (
                     <section className="history-section mt-4">
-                        <h2>Your Upload History</h2>
+                        <h2>{t('history.title')}</h2>
                         {loadingHistory ? (
-                            <p>Loading history...</p>
+                            <p>{t('history.syncing')}</p>
                         ) : myEntries.length === 0 ? (
-                            <p>You haven't uploaded any tree data yet.</p>
+                            <p>{t('history.no_entries')}</p>
                         ) : (
                             <div className="history-grid">
                                 {myEntries.map(entry => (

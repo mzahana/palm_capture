@@ -1,4 +1,7 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import './i18n';
 import Login from './components/Login';
 import ClientView from './components/ClientView';
 import AdminDashboard from './components/AdminDashboard';
@@ -18,6 +21,15 @@ const ProtectedRoute = ({ children, allowedRole }) => {
 };
 
 function App() {
+    const { i18n } = useTranslation();
+
+    useEffect(() => {
+        // Enforce RTL layout for Arabic
+        const isArabic = i18n.language && i18n.language.startsWith('ar');
+        document.documentElement.dir = isArabic ? 'rtl' : 'ltr';
+        document.documentElement.lang = isArabic ? 'ar' : 'en';
+    }, [i18n.language]);
+
     return (
         <BrowserRouter>
             <Routes>

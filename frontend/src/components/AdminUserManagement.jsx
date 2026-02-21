@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../utils/api';
 import './AdminUserManagement.css';
 
 export default function AdminUserManagement() {
+    const { t } = useTranslation();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -95,39 +97,39 @@ export default function AdminUserManagement() {
     return (
         <div className="user-management">
             <div className="um-header">
-                <h2>Manage System Users</h2>
+                <h2>{t('header.manage_users')}</h2>
                 <button className="btn-primary" onClick={() => setIsAddOpen(!isAddOpen)}>
-                    {isAddOpen ? "Cancel Add" : "+ Add New User"}
+                    {isAddOpen ? t('common.cancel') : t('admin.add_user')}
                 </button>
             </div>
 
             {isAddOpen && (
                 <div className="add-user-card">
-                    <h3>Create New User</h3>
+                    <h3>{t('admin.add_user')}</h3>
                     <form onSubmit={handleCreateUser} className="add-user-form">
                         <div className="form-group row">
                             <div className="half">
-                                <label>First Name</label>
+                                <label>{t('login.first_name')}</label>
                                 <input type="text" required value={newUser.first_name} onChange={e => setNewUser({ ...newUser, first_name: e.target.value })} />
                             </div>
                             <div className="half">
-                                <label>Last Name</label>
+                                <label>{t('login.last_name')}</label>
                                 <input type="text" required value={newUser.last_name} onChange={e => setNewUser({ ...newUser, last_name: e.target.value })} />
                             </div>
                         </div>
                         <div className="form-group row">
                             <div className="half">
-                                <label>Username</label>
+                                <label>{t('login.username')}</label>
                                 <input type="text" required value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} />
                             </div>
                             <div className="half">
-                                <label>Email</label>
+                                <label>{t('login.email')}</label>
                                 <input type="email" required value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} />
                             </div>
                         </div>
                         <div className="form-group row">
                             <div className="half">
-                                <label>Password</label>
+                                <label>{t('login.password')}</label>
                                 <input type="password" required value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} />
                             </div>
                             <div className="half">
@@ -138,7 +140,7 @@ export default function AdminUserManagement() {
                                 </select>
                             </div>
                         </div>
-                        <button type="submit" className="btn-primary mt-2">Create Account</button>
+                        <button type="submit" className="btn-primary mt-2">{t('login.register_btn')}</button>
                     </form>
                 </div>
             )}
@@ -200,15 +202,15 @@ export default function AdminUserManagement() {
                                             <td><span className={`role-badge ${user.role}`}>{user.role}</span></td>
                                             <td>
                                                 <span className={`status-badge ${user.is_active ? 'active' : 'disabled'}`}>
-                                                    {user.is_active ? 'Active' : 'Disabled'}
+                                                    {user.is_active ? t('common.active') : t('common.disabled')}
                                                 </span>
                                             </td>
                                             <td className="actions-cell">
-                                                <button className="btn-secondary btn-sm" onClick={() => { setEditUserId(user.id); setEditUser(user); }}>Edit</button>
+                                                <button className="btn-secondary btn-sm" onClick={() => { setEditUserId(user.id); setEditUser(user); }}>{t('common.edit')}</button>
                                                 <button className={`btn-sm ${user.is_active ? 'btn-warning' : 'btn-success'}`} onClick={() => toggleActive(user)}>
-                                                    {user.is_active ? 'Disable' : 'Enable'}
+                                                    {user.is_active ? t('common.disable') : t('common.enable')}
                                                 </button>
-                                                <button className="btn-danger btn-sm" onClick={() => handleDeleteUser(user.id, user.username)}>Delete</button>
+                                                <button className="btn-danger btn-sm" onClick={() => handleDeleteUser(user.id, user.username)}>{t('common.delete')}</button>
                                             </td>
                                         </>
                                     )}

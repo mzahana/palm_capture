@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../utils/api';
+import LanguageSwitcher from './LanguageSwitcher';
 import './Login.css';
 
 export default function Login() {
+    const { t } = useTranslation();
     const [isRegistering, setIsRegistering] = useState(false);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -70,9 +73,12 @@ export default function Login() {
 
     return (
         <div className="login-container">
+            <div style={{ position: 'absolute', top: '1rem', right: '1rem', left: 'auto' }}>
+                <LanguageSwitcher />
+            </div>
             <div className="login-card">
-                <h2>Tree Dataset Collection</h2>
-                <p>{isRegistering ? 'Create a new account' : 'Login to your account'}</p>
+                <h2>{t('login.title')}</h2>
+                <p>{isRegistering ? t('login.register_btn') : t('login.login_btn')}</p>
 
                 {error && <div className="error-message">{error}</div>}
                 {success && <div className="status-banner success">{success}</div>}
@@ -82,22 +88,22 @@ export default function Login() {
                         <>
                             <div className="form-group row">
                                 <div className="half">
-                                    <label>First Name</label>
+                                    <label>{t('login.first_name')}</label>
                                     <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
                                 </div>
                                 <div className="half">
-                                    <label>Last Name</label>
+                                    <label>{t('login.last_name')}</label>
                                     <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
                                 </div>
                             </div>
                             <div className="form-group">
-                                <label>Email</label>
+                                <label>{t('login.email')}</label>
                                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                             </div>
                         </>
                     )}
                     <div className="form-group">
-                        <label>Username</label>
+                        <label>{t('login.username')}</label>
                         <input
                             type="text"
                             value={username}
@@ -106,7 +112,7 @@ export default function Login() {
                         />
                     </div>
                     <div className="form-group">
-                        <label>Password</label>
+                        <label>{t('login.password')}</label>
                         <input
                             type="password"
                             value={password}
@@ -115,13 +121,12 @@ export default function Login() {
                         />
                     </div>
                     <button type="submit" disabled={loading} className="btn-primary">
-                        {loading ? 'Processing...' : (isRegistering ? 'Register' : 'Login')}
+                        {loading ? 'Processing...' : (isRegistering ? t('login.register_btn') : t('login.login_btn'))}
                     </button>
                 </form>
 
                 <div className="toggle-auth" style={{ marginTop: '1.5rem', textAlign: 'center' }}>
                     <p style={{ color: '#718096', fontSize: '0.9rem' }}>
-                        {isRegistering ? 'Already have an account? ' : "Don't have an account? "}
                         <button
                             type="button"
                             style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer', fontWeight: 'bold' }}
@@ -131,7 +136,7 @@ export default function Login() {
                                 setSuccess('');
                             }}
                         >
-                            {isRegistering ? 'Log in' : 'Register'}
+                            {isRegistering ? t('login.have_account') : t('login.no_account')}
                         </button>
                     </p>
                 </div>

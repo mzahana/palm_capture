@@ -44,7 +44,7 @@ import auth
 
 @app.post("/auth/token")
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
-    user = db.query(models.User).filter(models.User.username == form_data.username).first()
+    user = db.query(models.User).filter(models.User.username == form_data.username.lower()).first()
     if not user or not auth.verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -63,13 +63,14 @@ def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
 
 @app.post("/register")
 def register_user(user_data: schemas.UserRegister, db: Session = Depends(database.get_db)):
-    # Check if user exists
-    existing_user = db.query(models.User).filter(models.User.username == user_data.username).first()
+    # Check if user exists (case-insensitive)
+    username_lower = user_data.username.lower()
+    existing_user = db.query(models.User).filter(models.User.username == username_lower).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already registered")
     
     new_user = models.User(
-        username=user_data.username,
+        username=username_lower,
         first_name=user_data.first_name,
         last_name=user_data.last_name,
         email=user_data.email,
@@ -103,12 +104,13 @@ def get_all_users(current_user: models.User = Depends(auth.get_current_admin_use
 
 @app.post("/users")
 def create_user(user_data: schemas.UserCreateAdmin, current_user: models.User = Depends(auth.get_current_admin_user), db: Session = Depends(database.get_db)):
-    existing_user = db.query(models.User).filter(models.User.username == user_data.username).first()
+    username_lower = user_data.username.lower()
+    existing_user = db.query(models.User).filter(models.User.username == username_lower).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already registered")
     
     new_user = models.User(
-        username=user_data.username,
+        username=username_lower,
         first_name=user_data.first_name,
         last_name=user_data.last_name,
         email=user_data.email,

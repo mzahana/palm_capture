@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api, { BASE_URL } from '../utils/api';
 import SettingsModal from './SettingsModal';
+import LanguageSwitcher from './LanguageSwitcher';
 import AdminUserManagement from './AdminUserManagement';
 import './AdminDashboard.css';
 
@@ -15,6 +17,7 @@ const formatBytes = (bytes, decimals = 2) => {
 };
 
 export default function AdminDashboard() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const username = localStorage.getItem('username') || 'Admin';
     const [entries, setEntries] = useState([]);
@@ -168,7 +171,7 @@ export default function AdminDashboard() {
     };
 
     const handleDelete = async () => {
-        if (!window.confirm("Are you sure you want to permanently delete this data record and any associated files? This cannot be undone.")) return;
+        if (!window.confirm(t('common.confirm_delete'))) return;
 
         try {
             setIsDeleting(true);
@@ -204,16 +207,17 @@ export default function AdminDashboard() {
     return (
         <div className="admin-container">
             <header className="admin-header">
-                <h1>Admin Dashboard</h1>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <span className="welcome-text">Welcome, <strong>{username}</strong></span>
+                <h1>{t('header.manage_data')}</h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                    <span className="welcome-text">{t('header.welcome', { username })}</span>
 
-                    <button className={activeTab === 'data' ? 'btn-primary' : 'btn-secondary'} onClick={() => setActiveTab('data')}>Manage Data</button>
-                    <button className={activeTab === 'users' ? 'btn-primary' : 'btn-secondary'} onClick={() => setActiveTab('users')}>Manage Users</button>
+                    <button className={activeTab === 'data' ? 'btn-primary' : 'btn-secondary'} onClick={() => setActiveTab('data')}>{t('header.manage_data')}</button>
+                    <button className={activeTab === 'users' ? 'btn-primary' : 'btn-secondary'} onClick={() => setActiveTab('users')}>{t('header.manage_users')}</button>
 
-                    <button className="btn-secondary" onClick={() => navigate('/client')}>📷 Collect Data</button>
-                    <button className="btn-secondary" onClick={() => setIsSettingsOpen(true)}>⚙️ Settings</button>
-                    <button className="btn-logout" onClick={handleLogout}>Logout</button>
+                    <button className="btn-secondary" onClick={() => navigate('/client')}>📷 {t('header.collect_data')}</button>
+                    <LanguageSwitcher />
+                    <button className="btn-secondary" onClick={() => setIsSettingsOpen(true)}>⚙️ {t('header.settings')}</button>
+                    <button className="btn-logout" onClick={handleLogout}>{t('header.logout')}</button>
                 </div>
             </header>
 
@@ -227,28 +231,28 @@ export default function AdminDashboard() {
                         <div className="data-tab-content">
                             <div className="dashboard-top-panel">
                                 <div className="stats-panel">
-                                    <h3>📊 Data Statistics</h3>
+                                    <h3>📊 {t('admin.data_statistics')}</h3>
                                     <div className="stats-grid">
-                                        <div className="stat-box"><strong>{filteredEntries.length}</strong> Total Entries</div>
-                                        <div className="stat-box"><strong>{uniqueUsersCount}</strong> Users</div>
-                                        <div className="stat-box"><strong>{withAudioCount}</strong> w/ Audio</div>
-                                        <div className="stat-box"><strong>{withLocationCount}</strong> w/ GPS</div>
-                                        <div className="stat-box"><strong>{formatBytes(filteredEntries.reduce((acc, curr) => acc + (curr.image_size_bytes || 0), 0))}</strong> Image Storage</div>
-                                        <div className="stat-box"><strong>{formatBytes(filteredEntries.reduce((acc, curr) => acc + (curr.audio_size_bytes || 0), 0))}</strong> Audio Storage</div>
+                                        <div className="stat-box"><strong>{filteredEntries.length}</strong> {t('admin.total_entries')}</div>
+                                        <div className="stat-box"><strong>{uniqueUsersCount}</strong> {t('admin.total_users')}</div>
+                                        <div className="stat-box"><strong>{withAudioCount}</strong> {t('admin.missing_audio')}</div>
+                                        <div className="stat-box"><strong>{withLocationCount}</strong> {t('admin.missing_gps')}</div>
+                                        <div className="stat-box"><strong>{formatBytes(filteredEntries.reduce((acc, curr) => acc + (curr.image_size_bytes || 0), 0))}</strong> {t('admin.image_storage')}</div>
+                                        <div className="stat-box"><strong>{formatBytes(filteredEntries.reduce((acc, curr) => acc + (curr.audio_size_bytes || 0), 0))}</strong> {t('admin.audio_storage')}</div>
                                     </div>
                                 </div>
 
                                 <div className="filters-panel">
-                                    <h3>🔍 Filter Data</h3>
+                                    <h3>🔍 {t('admin.filter_data')}</h3>
                                     <div className="filter-controls">
-                                        <input type="text" placeholder="Filter by User Name..." value={filterUser} onChange={e => setFilterUser(e.target.value)} />
-                                        <input type="date" title="Start Date" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} />
-                                        <input type="date" title="End Date" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} />
+                                        <input type="text" placeholder={t('admin.search_user')} value={filterUser} onChange={e => setFilterUser(e.target.value)} />
+                                        <input type="date" title={t('admin.start_date')} value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} />
+                                        <input type="date" title={t('admin.end_date')} value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} />
                                         <div className="checkboxes">
-                                            <label><input type="checkbox" checked={filterAudio} onChange={e => setFilterAudio(e.target.checked)} /> Has Audio</label>
-                                            <label><input type="checkbox" checked={filterLocation} onChange={e => setFilterLocation(e.target.checked)} /> Has GPS</label>
-                                            <label><input type="checkbox" checked={filterNotes} onChange={e => setFilterNotes(e.target.checked)} /> Has Notes</label>
-                                            <label><input type="checkbox" checked={filterTemp} onChange={e => setFilterTemp(e.target.checked)} /> Has Temp</label>
+                                            <label><input type="checkbox" checked={filterAudio} onChange={e => setFilterAudio(e.target.checked)} /> {t('admin.has_audio')}</label>
+                                            <label><input type="checkbox" checked={filterLocation} onChange={e => setFilterLocation(e.target.checked)} /> {t('admin.has_gps')}</label>
+                                            <label><input type="checkbox" checked={filterNotes} onChange={e => setFilterNotes(e.target.checked)} /> {t('admin.has_notes')}</label>
+                                            <label><input type="checkbox" checked={filterTemp} onChange={e => setFilterTemp(e.target.checked)} /> {t('admin.has_temp')}</label>
                                         </div>
                                     </div>
                                 </div>
@@ -261,10 +265,10 @@ export default function AdminDashboard() {
                                         <div className="card-image-wrapper">
                                             <img src={`${BASE_URL}/static/${entry.image_path}`} alt="Tree" loading="lazy" />
                                             <div className="card-badges">
-                                                {entry.audio_path && <span className="badge" title="Has Voice Note">🎙️</span>}
-                                                {entry.latitude && entry.longitude && <span className="badge" title="Has GPS">📍</span>}
-                                                {entry.temperature !== null && <span className="badge" title="Has Temp">🌡️</span>}
-                                                {entry.notes && <span className="badge" title="Has Notes">📝</span>}
+                                                {entry.audio_path && <span className="badge" title={t('admin.has_audio')}>🎙️</span>}
+                                                {entry.latitude && entry.longitude && <span className="badge" title={t('admin.has_gps')}>📍</span>}
+                                                {entry.temperature !== null && <span className="badge" title={t('admin.has_temp')}>🌡️</span>}
+                                                {entry.notes && <span className="badge" title={t('admin.has_notes')}>📝</span>}
                                             </div>
                                         </div>
                                         <div className="card-footer">
@@ -289,46 +293,46 @@ export default function AdminDashboard() {
                             <div className="modal-left">
                                 <img src={`${BASE_URL}/static/${selectedEntry.image_path}`} alt="Tree Enlarge" className="modal-image" />
                                 <div className="media-stats">
-                                    {selectedEntry.image_width && selectedEntry.image_height && <p>Dimensions: {selectedEntry.image_width} x {selectedEntry.image_height} px</p>}
-                                    {selectedEntry.image_size_bytes && <p>Image Size: {formatBytes(selectedEntry.image_size_bytes)}</p>}
+                                    {selectedEntry.image_width && selectedEntry.image_height && <p>{t('admin.modal_dimensions')}: {selectedEntry.image_width} x {selectedEntry.image_height} px</p>}
+                                    {selectedEntry.image_size_bytes && <p>{t('admin.modal_image_size')}: {formatBytes(selectedEntry.image_size_bytes)}</p>}
                                 </div>
                                 {selectedEntry.audio_path && !deleteAudio && (
                                     <div className="modal-audio">
-                                        <h4>Current Recording {selectedEntry.audio_size_bytes ? `(${formatBytes(selectedEntry.audio_size_bytes)})` : ''}</h4>
+                                        <h4>{t('admin.current_recording')} {selectedEntry.audio_size_bytes ? `(${formatBytes(selectedEntry.audio_size_bytes)})` : ''}</h4>
                                         <audio controls src={`${BASE_URL}/static/${selectedEntry.audio_path}`}></audio>
-                                        <button type="button" className="action-btn delete-btn" onClick={handleDeleteCurrentAudio} style={{ marginTop: '0.5rem', display: 'block' }}>Delete Recording</button>
+                                        <button type="button" className="action-btn delete-btn" onClick={handleDeleteCurrentAudio} style={{ marginTop: '0.5rem', display: 'block' }}>{t('common.delete')}</button>
                                     </div>
                                 )}
 
                                 <div className="audio-section" style={{ marginTop: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
-                                    <h4>{selectedEntry.audio_path && !deleteAudio ? 'Replace Recording' : 'Add Recording'}</h4>
+                                    <h4>{selectedEntry.audio_path && !deleteAudio ? t('admin.replace_recording') : t('admin.add_recording')}</h4>
                                     {!isRecording && !newAudioBlob && (
                                         <button type="button" className="action-btn record-btn" onClick={startRecording}>
-                                            🎙️ Start Recording
+                                            🎙️ {t('form.start_recording')}
                                         </button>
                                     )}
                                     {isRecording && (
                                         <div className="recording-active">
-                                            <span className="pulse">🔴</span> Recording: {recordingTime}s
-                                            <button type="button" className="action-btn stop-btn" onClick={stopRecording}>Stop</button>
+                                            <span className="pulse">🔴</span> {t('admin.recording_active')}: {recordingTime}s
+                                            <button type="button" className="action-btn stop-btn" onClick={stopRecording}>{t('form.stop_recording')}</button>
                                         </div>
                                     )}
                                     {newAudioBlob && (
                                         <div className="new-audio-preview">
                                             <audio src={URL.createObjectURL(newAudioBlob)} controls />
-                                            <button type="button" className="action-btn delete-btn" onClick={() => setNewAudioBlob(null)}>Discard</button>
+                                            <button type="button" className="action-btn delete-btn" onClick={() => setNewAudioBlob(null)}>{t('admin.discard')}</button>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
                             <div className="modal-right">
-                                <h3>Entry Details (ID: {selectedEntry.id})</h3>
-                                <p className="modal-timestamp" style={{ marginBottom: '0.5rem' }}>Captured: {new Date(selectedEntry.timestamp).toLocaleString()}</p>
-                                <p className="modal-timestamp">Uploaded by User: {selectedEntry.uploader_username} (ID: {selectedEntry.uploader_id})</p>
+                                <h3>{t('admin.entry_details_id', { id: selectedEntry.id })}</h3>
+                                <p className="modal-timestamp" style={{ marginBottom: '0.5rem' }}>{t('admin.captured')}: {new Date(selectedEntry.timestamp).toLocaleString()}</p>
+                                <p className="modal-timestamp">{t('admin.uploaded_by_user')}: {selectedEntry.uploader_username} (ID: {selectedEntry.uploader_id})</p>
 
                                 <div className="form-group">
-                                    <label>Notes</label>
+                                    <label>{t('admin.notes')}</label>
                                     <textarea
                                         rows="4"
                                         value={editNotes}
@@ -339,7 +343,7 @@ export default function AdminDashboard() {
 
                                 <div className="form-group row">
                                     <div className="half">
-                                        <label>Temperature (°C)</label>
+                                        <label>{t('admin.temperature')}</label>
                                         <input
                                             type="number"
                                             step="0.1"
@@ -349,25 +353,25 @@ export default function AdminDashboard() {
                                         />
                                     </div>
                                     <div className="half">
-                                        <label>Location</label>
+                                        <label>{t('admin.location')}</label>
                                         {selectedEntry.latitude && selectedEntry.longitude ? (
                                             <div className="map-link">
                                                 <a href={`https://www.google.com/maps/search/?api=1&query=${selectedEntry.latitude},${selectedEntry.longitude}`} target="_blank" rel="noreferrer">
-                                                    View on Map 📍
+                                                    {t('admin.view_on_map')}
                                                 </a>
                                             </div>
                                         ) : (
-                                            <p className="not-avail">Not available</p>
+                                            <p className="not-avail">{t('admin.not_available')}</p>
                                         )}
                                     </div>
                                 </div>
 
                                 <div className="modal-actions">
-                                    <button className="btn-secondary" onClick={closeModal} disabled={isDeleting}>Cancel</button>
+                                    <button className="btn-secondary" onClick={closeModal} disabled={isDeleting}>{t('common.cancel')}</button>
                                     <button type="button" onClick={handleDelete} disabled={isDeleting} style={{ backgroundColor: '#E53E3E', color: 'white', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: '500' }}>
-                                        {isDeleting ? 'Deleting...' : 'Delete Record'}
+                                        {isDeleting ? 'Deleting...' : t('common.delete_record')}
                                     </button>
-                                    <button className="btn-primary" onClick={saveUpdates} disabled={isDeleting}>Save Changes</button>
+                                    <button className="btn-primary" onClick={saveUpdates} disabled={isDeleting}>{t('common.save_changes')}</button>
                                 </div>
 
                             </div>

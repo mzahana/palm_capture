@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import api, { BASE_URL } from '../utils/api';
 import './ClientEditModal.css';
 
@@ -12,10 +13,11 @@ const formatBytes = (bytes, decimals = 2) => {
 };
 
 export default function ClientEditModal({ isOpen, onClose, entry, onSaveSuccess, onDeleteSuccess }) {
-    if (!isOpen || !entry) return null;
+    const { t } = useTranslation();
 
-    const [editNotes, setEditNotes] = useState(entry.notes || '');
-    const [editTemp, setEditTemp] = useState(entry.temperature || '');
+    // Hooks must be called before any conditional returns
+    const [editNotes, setEditNotes] = useState('');
+    const [editTemp, setEditTemp] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -28,6 +30,20 @@ export default function ClientEditModal({ isOpen, onClose, entry, onSaveSuccess,
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
     const timerRef = useRef(null);
+
+    // Sync state when entry changes or modal opens
+    React.useEffect(() => {
+        if (isOpen && entry) {
+            setEditNotes(entry.notes || '');
+            setEditTemp(entry.temperature || '');
+            setNewAudioBlob(null);
+            setDeleteAudio(false);
+            setIsRecording(false);
+            setRecordingTime(0);
+        }
+    }, [isOpen, entry]);
+
+    if (!isOpen || !entry) return null;
 
     const startRecording = async () => {
         try {
@@ -82,7 +98,7 @@ export default function ClientEditModal({ isOpen, onClose, entry, onSaveSuccess,
     };
 
     const handleDelete = async () => {
-        if (!window.confirm("Are you sure you want to permanently delete this data record and any associated files? This cannot be undone.")) return;
+        if (!window.confirm(t('common.confirm_delete'))) return;
 
         try {
             setIsDeleting(true);
@@ -135,19 +151,19 @@ export default function ClientEditModal({ isOpen, onClose, entry, onSaveSuccess,
                     <div className="modal-left">
                         <img src={`${BASE_URL}/static/${entry.image_path}`} alt="Tree Preview" className="modal-image" />
                         <div className="media-stats">
-                            {entry.image_width && entry.image_height && <p>Dimensions: {entry.image_width} x {entry.image_height} px</p>}
-                            {entry.image_size_bytes && <p>Image Size: {formatBytes(entry.image_size_bytes)}</p>}
+                            {entry.image_width && entry.image_height && <p>{t('admin.modal_dimensions')}: {entry.image_width} x {entry.image_height} px</p>}
+                            {entry.image_size_bytes && <p>{t('admin.modal_image_size')}: {formatBytes(entry.image_size_bytes)}</p>}
                         </div>
                     </div>
                     <div className="modal-right">
-                        <h3>Edit Entry (ID: {entry.id})</h3>
+                        <h3>{t('admin.entry_details_id', { id: entry.id })}</h3>
                         <p className="modal-timestamp" style={{ marginBottom: "1rem" }}>
-                            Captured: {new Date(entry.timestamp).toLocaleString()}
+                            {t('admin.captured')}: {new Date(entry.timestamp).toLocaleString()}
                         </p>
 
                         <div className="form-group row">
                             <div className="half">
-                                <label>Temperature (°C)</label>
+                                <label>{t('admin.temperature')}</label>
                                 <input
                                     type="number"
                                     step="0.1"
@@ -157,21 +173,21 @@ export default function ClientEditModal({ isOpen, onClose, entry, onSaveSuccess,
                                 />
                             </div>
                             <div className="half">
-                                <label>Location</label>
+                                <label>{t('admin.location')}</label>
                                 {entry.latitude && entry.longitude ? (
                                     <div className="map-link">
                                         <a href={`https://www.google.com/maps/search/?api=1&query=${entry.latitude},${entry.longitude}`} target="_blank" rel="noreferrer">
-                                            View on Map 📍
+                                            {t('admin.view_on_map')}
                                         </a>
                                     </div>
                                 ) : (
-                                    <p className="not-avail">Not available</p>
+                                    <p className="not-avail">{t('admin.not_available')}</p>
                                 )}
                             </div>
                         </div>
 
                         <div className="form-group">
-                            <label>Notes</label>
+                            <label>{t('admin.notes')}</label>
                             <textarea
                                 rows="4"
                                 value={editNotes}
@@ -181,13 +197,13 @@ export default function ClientEditModal({ isOpen, onClose, entry, onSaveSuccess,
                         </div>
 
                         <div className="form-group">
-                            <label>Voice Note</label>
+                            <label>{t('form.voice_note')}</label>
                             <div className="audio-edit-section">
                                 {entry.audio_path && !deleteAudio && !newAudioBlob && (
                                     <div className="current-audio">
-                                        <p>Current Recording {entry.audio_size_bytes ? `(${formatBytes(entry.audio_size_bytes)})` : ''}:</p>
+                                        <p>{t('admin.current_recording')} {entry.audio_size_bytes ? `(${formatBytes(entry.audio_size_bytes)})` : ''}:</p>
                                         <audio controls src={`${BASE_URL}/static/${entry.audio_path}`}></audio>
-                                        <button type="button" className="btn-text-danger" onClick={handleDeleteCurrentAudio}>Delete Current Audio</button>
+                                        <button type="button" className="btn-text-danger" onClick={handleDeleteCurrentAudio}>{t('common.delete')}</button>
                                     </div>
                                 )}
 
@@ -195,19 +211,19 @@ export default function ClientEditModal({ isOpen, onClose, entry, onSaveSuccess,
                                     <div className={`audio-recorder ${isRecording ? 'recording' : ''}`}>
                                         {!isRecording && !newAudioBlob && (
                                             <button type="button" className="btn-record" onClick={startRecording}>
-                                                🎙️ Record New Audio
+                                                🎙️ {t('admin.add_recording')}
                                             </button>
                                         )}
                                         {isRecording && (
                                             <div className="recording-active">
-                                                <span className="pulse">🔴</span> Recording... {recordingTime}s
-                                                <button type="button" className="btn-stop" onClick={stopRecording}>Stop</button>
+                                                <span className="pulse">🔴</span> {t('admin.recording_active')}... {recordingTime}s
+                                                <button type="button" className="btn-stop" onClick={stopRecording}>{t('form.stop_recording')}</button>
                                             </div>
                                         )}
                                         {newAudioBlob && !isRecording && (
                                             <div className="audio-preview">
                                                 <audio controls src={URL.createObjectURL(newAudioBlob)}></audio>
-                                                <button type="button" className="btn-text-danger" onClick={() => { setNewAudioBlob(null); setRecordingTime(0); }}>Discard New Recording</button>
+                                                <button type="button" className="btn-text-danger" onClick={() => { setNewAudioBlob(null); setRecordingTime(0); }}>{t('admin.discard')}</button>
                                             </div>
                                         )}
                                     </div>
@@ -216,12 +232,12 @@ export default function ClientEditModal({ isOpen, onClose, entry, onSaveSuccess,
                         </div>
 
                         <div className="modal-actions" style={{ marginTop: "1.5rem" }}>
-                            <button className="btn-secondary" onClick={onClose} disabled={isSaving || isDeleting}>Cancel</button>
+                            <button className="btn-secondary" onClick={onClose} disabled={isSaving || isDeleting}>{t('common.cancel')}</button>
                             <button type="button" onClick={handleDelete} disabled={isSaving || isDeleting} style={{ backgroundColor: '#E53E3E', color: 'white', border: 'none', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: '500' }}>
-                                {isDeleting ? 'Deleting...' : 'Delete Record'}
+                                {isDeleting ? 'Deleting...' : t('common.delete_record')}
                             </button>
                             <button className="btn-primary" onClick={handleSave} disabled={isSaving || isDeleting}>
-                                {isSaving ? "Saving..." : "Save Changes"}
+                                {isSaving ? "Saving..." : t('common.save_changes')}
                             </button>
                         </div>
                     </div>

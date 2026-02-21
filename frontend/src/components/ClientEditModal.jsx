@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import api from '../utils/api';
+import api, { BASE_URL } from '../utils/api';
 import './ClientEditModal.css';
 
 const formatBytes = (bytes, decimals = 2) => {
@@ -43,7 +43,11 @@ export default function ClientEditModal({ isOpen, onClose, entry, onSaveSuccess,
             };
 
             mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                let mimeType = 'audio/webm';
+                if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                    mimeType = 'audio/mp4';
+                }
+                const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
                 setNewAudioBlob(audioBlob);
                 setDeleteAudio(false);
                 stream.getTracks().forEach(track => track.stop());
@@ -106,7 +110,8 @@ export default function ClientEditModal({ isOpen, onClose, entry, onSaveSuccess,
                 formData.append("delete_audio", true);
             }
             if (newAudioBlob) {
-                formData.append("audio", newAudioBlob, "audio.webm");
+                const ext = newAudioBlob.type.includes('mp4') ? 'mp4' : 'webm';
+                formData.append("audio", newAudioBlob, `audio.${ext}`);
             }
 
             await api.put(`/entries/${entry.id}`, formData, {
@@ -128,7 +133,7 @@ export default function ClientEditModal({ isOpen, onClose, entry, onSaveSuccess,
                 <button className="modal-close" onClick={onClose}>&times;</button>
                 <div className="modal-body">
                     <div className="modal-left">
-                        <img src={`http://localhost:8000/static/${entry.image_path}`} alt="Tree Preview" className="modal-image" />
+                        <img src={`${BASE_URL}/static/${entry.image_path}`} alt="Tree Preview" className="modal-image" />
                         <div className="media-stats">
                             {entry.image_width && entry.image_height && <p>Dimensions: {entry.image_width} x {entry.image_height} px</p>}
                             {entry.image_size_bytes && <p>Image Size: {formatBytes(entry.image_size_bytes)}</p>}
@@ -151,6 +156,18 @@ export default function ClientEditModal({ isOpen, onClose, entry, onSaveSuccess,
                                     className="edit-input"
                                 />
                             </div>
+                            <div className="half">
+                                <label>Location</label>
+                                {entry.latitude && entry.longitude ? (
+                                    <div className="map-link">
+                                        <a href={`https://www.google.com/maps/search/?api=1&query=${entry.latitude},${entry.longitude}`} target="_blank" rel="noreferrer">
+                                            View on Map 📍
+                                        </a>
+                                    </div>
+                                ) : (
+                                    <p className="not-avail">Not available</p>
+                                )}
+                            </div>
                         </div>
 
                         <div className="form-group">
@@ -169,7 +186,7 @@ export default function ClientEditModal({ isOpen, onClose, entry, onSaveSuccess,
                                 {entry.audio_path && !deleteAudio && !newAudioBlob && (
                                     <div className="current-audio">
                                         <p>Current Recording {entry.audio_size_bytes ? `(${formatBytes(entry.audio_size_bytes)})` : ''}:</p>
-                                        <audio controls src={`http://localhost:8000/static/${entry.audio_path}`}></audio>
+                                        <audio controls src={`${BASE_URL}/static/${entry.audio_path}`}></audio>
                                         <button type="button" className="btn-text-danger" onClick={handleDeleteCurrentAudio}>Delete Current Audio</button>
                                     </div>
                                 )}

@@ -9,7 +9,7 @@ Palm Capture is a modern, mobile-responsive web application designed to collect 
 - **Comprehensive Data Collection**:
   - Image capturing (uses device camera on mobile).
   - Voice Note recording (HTML5 microphone API).
-  - Background GPS Coordinate fetching.
+  - Interactive Map Location Picker (Leaflet maps with direct tap-to-pin and geolocation auto-zoom).
   - Automatic Temperature fetching (via Open-Meteo based on GPS).
 - **Client History & Editing**: Workers can view their past data submissions. They can also seamlessly edit their past inputs, including recording replacement voice notes or fixing temperature readings.
 - **Admin Dashboard**: A global view for administrators. Features a data grid mapping out all entries, detailed overlay cards with embedded maps, and a built-in Data Collection mode identical to the client form.

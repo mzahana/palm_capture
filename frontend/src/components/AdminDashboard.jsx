@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../utils/api';
+import api, { BASE_URL } from '../utils/api';
 import SettingsModal from './SettingsModal';
 import AdminUserManagement from './AdminUserManagement';
 import './AdminDashboard.css';
@@ -39,6 +39,68 @@ export default function AdminDashboard() {
     const [editTemp, setEditTemp] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
 
+    // Audio edit state
+    const [deleteAudio, setDeleteAudio] = useState(false);
+    const [newAudioBlob, setNewAudioBlob] = useState(null);
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
+
+    const mediaRecorderRef = useRef(null);
+    const audioChunksRef = useRef([]);
+    const timerRef = useRef(null);
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                let mimeType = 'audio/webm';
+                if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                    mimeType = 'audio/mp4';
+                }
+                const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+                setNewAudioBlob(audioBlob);
+                setDeleteAudio(false);
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+
+            let seconds = 0;
+            timerRef.current = setInterval(() => {
+                seconds++;
+                setRecordingTime(seconds);
+            }, 1000);
+
+        } catch (err) {
+            console.error("Error accessing microphone:", err);
+            alert("Microphone access denied or error occurred.");
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            clearInterval(timerRef.current);
+        }
+    };
+
+    const handleDeleteCurrentAudio = () => {
+        setDeleteAudio(true);
+        setNewAudioBlob(null);
+    };
+
     const fetchEntries = async () => {
         try {
             setLoading(true);
@@ -68,24 +130,36 @@ export default function AdminDashboard() {
         setSelectedEntry(entry);
         setEditNotes(entry.notes || '');
         setEditTemp(entry.temperature || '');
+        setDeleteAudio(false);
+        setNewAudioBlob(null);
+        setIsRecording(false);
+        setRecordingTime(0);
     };
 
     const closeModal = () => {
         setSelectedEntry(null);
+        if (isRecording) stopRecording();
     };
 
     const saveUpdates = async () => {
         try {
-            await api.put(`/entries/${selectedEntry.id}`, {
-                notes: editNotes,
-                temperature: editTemp ? parseFloat(editTemp) : null
+            const formData = new FormData();
+            formData.append("notes", editNotes);
+            if (editTemp !== '') formData.append("temperature", editTemp);
+
+            if (deleteAudio && selectedEntry.audio_path) {
+                formData.append("delete_audio", true);
+            }
+            if (newAudioBlob) {
+                const ext = newAudioBlob.type.includes('mp4') ? 'mp4' : 'webm';
+                formData.append("audio", newAudioBlob, `audio.${ext}`);
+            }
+
+            const res = await api.put(`/entries/${selectedEntry.id}`, formData, {
+                headers: { "Content-Type": "multipart/form-data" }
             });
-            // Update local state
-            setEntries(entries.map(e => e.id === selectedEntry.id ? {
-                ...e,
-                notes: editNotes,
-                temperature: editTemp ? parseFloat(editTemp) : null
-            } : e));
+            // Update local state and grid dynamically from response
+            setEntries(entries.map(e => e.id === selectedEntry.id ? res.data : e));
             closeModal();
         } catch (err) {
             console.error("Update failed", err);
@@ -185,7 +259,7 @@ export default function AdminDashboard() {
                                 {filteredEntries.map(entry => (
                                     <div key={entry.id} className="grid-card" onClick={() => openModal(entry)}>
                                         <div className="card-image-wrapper">
-                                            <img src={`http://localhost:8000/static/${entry.image_path}`} alt="Tree" loading="lazy" />
+                                            <img src={`${BASE_URL}/static/${entry.image_path}`} alt="Tree" loading="lazy" />
                                             <div className="card-badges">
                                                 {entry.audio_path && <span className="badge" title="Has Voice Note">🎙️</span>}
                                                 {entry.latitude && entry.longitude && <span className="badge" title="Has GPS">📍</span>}
@@ -213,17 +287,39 @@ export default function AdminDashboard() {
                         <div className="modal-body">
 
                             <div className="modal-left">
-                                <img src={`http://localhost:8000/static/${selectedEntry.image_path}`} alt="Tree Enlarge" className="modal-image" />
+                                <img src={`${BASE_URL}/static/${selectedEntry.image_path}`} alt="Tree Enlarge" className="modal-image" />
                                 <div className="media-stats">
                                     {selectedEntry.image_width && selectedEntry.image_height && <p>Dimensions: {selectedEntry.image_width} x {selectedEntry.image_height} px</p>}
                                     {selectedEntry.image_size_bytes && <p>Image Size: {formatBytes(selectedEntry.image_size_bytes)}</p>}
                                 </div>
-                                {selectedEntry.audio_path && (
+                                {selectedEntry.audio_path && !deleteAudio && (
                                     <div className="modal-audio">
-                                        <h4>Voice Recording {selectedEntry.audio_size_bytes ? `(${formatBytes(selectedEntry.audio_size_bytes)})` : ''}</h4>
-                                        <audio controls src={`http://localhost:8000/static/${selectedEntry.audio_path}`}></audio>
+                                        <h4>Current Recording {selectedEntry.audio_size_bytes ? `(${formatBytes(selectedEntry.audio_size_bytes)})` : ''}</h4>
+                                        <audio controls src={`${BASE_URL}/static/${selectedEntry.audio_path}`}></audio>
+                                        <button type="button" className="action-btn delete-btn" onClick={handleDeleteCurrentAudio} style={{ marginTop: '0.5rem', display: 'block' }}>Delete Recording</button>
                                     </div>
                                 )}
+
+                                <div className="audio-section" style={{ marginTop: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
+                                    <h4>{selectedEntry.audio_path && !deleteAudio ? 'Replace Recording' : 'Add Recording'}</h4>
+                                    {!isRecording && !newAudioBlob && (
+                                        <button type="button" className="action-btn record-btn" onClick={startRecording}>
+                                            🎙️ Start Recording
+                                        </button>
+                                    )}
+                                    {isRecording && (
+                                        <div className="recording-active">
+                                            <span className="pulse">🔴</span> Recording: {recordingTime}s
+                                            <button type="button" className="action-btn stop-btn" onClick={stopRecording}>Stop</button>
+                                        </div>
+                                    )}
+                                    {newAudioBlob && (
+                                        <div className="new-audio-preview">
+                                            <audio src={URL.createObjectURL(newAudioBlob)} controls />
+                                            <button type="button" className="action-btn delete-btn" onClick={() => setNewAudioBlob(null)}>Discard</button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="modal-right">

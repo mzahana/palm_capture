@@ -1,10 +1,45 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../utils/api';
+import api, { BASE_URL } from '../utils/api';
 import SettingsModal from './SettingsModal';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import ClientEditModal from './ClientEditModal';
 import './ClientView.css';
 import './ClientViewHistory.css';
+
+const LocationMapPicker = ({ location, mapLocation, setMapLocation }) => {
+    const map = useMapEvents({
+        click(e) {
+            setMapLocation(e.latlng);
+        },
+        locationfound(e) {
+            setMapLocation(e.latlng);
+            map.flyTo(e.latlng, 15);
+        },
+    });
+
+    useEffect(() => {
+        if (location) {
+            setMapLocation({ lat: location.lat, lng: location.lon });
+            map.flyTo([location.lat, location.lon], 15);
+        } else {
+            map.locate({ setView: true, maxZoom: 15 });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [map]);
+
+    return mapLocation ? <Marker position={mapLocation}></Marker> : null;
+};
+
+// Fix Leaflet's default icon path issues with webpack/vite
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 export default function ClientView() {
     const navigate = useNavigate();
@@ -12,6 +47,8 @@ export default function ClientView() {
     const role = localStorage.getItem('role');
 
     // State
+    const [locationMode, setLocationMode] = useState('auto');
+    const [mapLocation, setMapLocation] = useState(null);
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [audioBlob, setAudioBlob] = useState(null);
@@ -27,6 +64,11 @@ export default function ClientView() {
 
     // V2 & V3 State
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+    // Manual location toggle
+    const [isManualLocation, setIsManualLocation] = useState(false);
+    const [manualLat, setManualLat] = useState('');
+    const [manualLon, setManualLon] = useState('');
     const [myEntries, setMyEntries] = useState([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
 
@@ -90,7 +132,12 @@ export default function ClientView() {
             };
 
             mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                // iOS Safari cannot playback video/webm natively, so we request audio/mp4 if supported
+                let mimeType = 'audio/webm';
+                if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                    mimeType = 'audio/mp4';
+                }
+                const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
                 setAudioBlob(audioBlob);
                 stream.getTracks().forEach(track => track.stop());
             };
@@ -174,13 +221,26 @@ export default function ClientView() {
         formData.append("image", imageFile);
         if (audioBlob) {
             // Pass a filename so backend can discern extension
-            formData.append("audio", audioBlob, "audio.webm");
+            const ext = audioBlob.type.includes('mp4') ? 'mp4' : 'webm';
+            formData.append("audio", audioBlob, `audio.${ext}`);
         }
         if (notes) formData.append("notes", notes);
-        if (location) {
-            formData.append("latitude", location.lat);
-            formData.append("longitude", location.lon);
+
+        let finalLat = null;
+        let finalLon = null;
+        if (locationMode === 'map' && mapLocation) {
+            finalLat = mapLocation.lat;
+            finalLon = mapLocation.lng;
+        } else if (locationMode === 'auto' && location) {
+            finalLat = location.lat;
+            finalLon = location.lon;
         }
+
+        if (finalLat !== null && finalLon !== null) {
+            formData.append("latitude", finalLat);
+            formData.append("longitude", finalLon);
+        }
+
         if (temperature) formData.append("temperature", temperature);
 
         try {
@@ -196,6 +256,8 @@ export default function ClientView() {
             setAudioBlob(null);
             setNotes('');
             setRecordingTime(0);
+            setLocationMode('auto');
+            setMapLocation(null);
             fetchMyHistory();
 
         } catch (err) {
@@ -289,19 +351,82 @@ export default function ClientView() {
                     {/* Location Section */}
                     <section className="form-section location-section">
                         <div className="location-info">
-                            <label>4. Location & Weather</label>
-                            {location ? (
-                                <p className="loc-data">
-                                    📍 {location.lat.toFixed(4)}, {location.lon.toFixed(4)}
-                                    <br /> 🌡️ {temperature ? `${temperature}°C` : 'Fetching temp...'}
-                                </p>
+                            <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <span>4. Location & Weather</span>
+                                <button type="button" className="action-btn" onClick={() => setLocationMode(locationMode === 'auto' ? 'map' : 'auto')} style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem' }}>
+                                    {locationMode === 'auto' ? 'Pick on Map 🗺️' : 'Use Auto GPS 📡'}
+                                </button>
+                            </label>
+
+                            {locationMode === 'map' ? (
+                                <div style={{ marginTop: '0.5rem' }}>
+                                    <div className="map-picker-container" style={{ height: '300px', width: '100%', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                                        <MapContainer
+                                            key={location ? `${location.lat}-${location.lon}` : 'default'}
+                                            center={location ? [location.lat, location.lon] : [0, 0]}
+                                            zoom={location ? 15 : 2}
+                                            style={{ height: '100%', width: '100%' }}
+                                        >
+                                            <TileLayer
+                                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+                                            />
+                                            <LocationMapPicker
+                                                location={location}
+                                                mapLocation={mapLocation}
+                                                setMapLocation={setMapLocation}
+                                            />
+                                        </MapContainer>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', padding: '0.5rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                        <p style={{ fontSize: '0.8rem', color: '#666', margin: 0 }}>
+                                            {mapLocation ? `Selected: ${mapLocation.lat.toFixed(4)}, ${mapLocation.lng.toFixed(4)}` : 'Tap anywhere on the map to drop a pin'}
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (mapLocation) {
+                                                    setLocation({ lat: mapLocation.lat, lon: mapLocation.lng });
+                                                    setLocationMode('auto');
+                                                    fetchTemperature(mapLocation.lat, mapLocation.lng);
+                                                }
+                                            }}
+                                            disabled={!mapLocation}
+                                            style={{
+                                                backgroundColor: mapLocation ? '#48bb78' : '#cbd5e0',
+                                                color: 'white',
+                                                padding: '0.5rem 1rem',
+                                                borderRadius: '4px',
+                                                border: 'none',
+                                                fontSize: '0.9rem',
+                                                fontWeight: 'bold',
+                                                cursor: mapLocation ? 'pointer' : 'not-allowed'
+                                            }}
+                                        >
+                                            Confirm Pin ✓
+                                        </button>
+                                    </div>
+                                </div>
                             ) : (
-                                <p className="loc-missing">Location not captured.</p>
+                                <>
+                                    {location ? (
+                                        <p className="loc-data" style={{ padding: '0.5rem', backgroundColor: '#f7fafc', borderRadius: '4px' }}>
+                                            📍 Local GPS: {location.lat.toFixed(4)}, {location.lon.toFixed(4)}
+                                            <br /> 🌡️ {temperature ? `${temperature}°C` : 'Fetching temp...'}
+                                        </p>
+                                    ) : (
+                                        <p className="loc-missing" style={{ padding: '0.5rem', backgroundColor: '#fff5f5', color: '#c53030', borderRadius: '4px' }}>
+                                            Auto GPS has not been captured. Use the "Pick on Map" button if your phone is blocking it.
+                                        </p>
+                                    )}
+                                </>
                             )}
                         </div>
-                        <button type="button" className="btn-secondary" onClick={getLocation}>
-                            {location ? 'Refresh Location' : 'Get Location'}
-                        </button>
+                        {locationMode === 'auto' && (
+                            <button type="button" className="btn-secondary" onClick={getLocation} style={{ marginTop: '0.5rem' }}>
+                                {location ? 'Refresh Auto Location' : 'Fetch GPS Location Automatically'}
+                            </button>
+                        )}
                     </section>
 
                     {statusMessage && (
@@ -331,7 +456,7 @@ export default function ClientView() {
                                         className="history-card clickable"
                                         onClick={() => { setSelectedEntry(entry); setIsEditModalOpen(true); }}
                                     >
-                                        <img src={`http://localhost:8000/static/${entry.image_path}`} alt="Tree" loading="lazy" />
+                                        <img src={`${BASE_URL}/static/${entry.image_path}`} alt="Tree" loading="lazy" />
                                         <div className="history-card-info">
                                             <p className="history-date">{new Date(entry.timestamp).toLocaleDateString()}</p>
                                             <div className="history-badges">
